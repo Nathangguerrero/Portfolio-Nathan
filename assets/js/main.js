@@ -1,0 +1,490 @@
+/* ── Loader ── */
+const loader = document.getElementById('loader');
+const loaderPct = document.getElementById('loader-pct');
+let pct = 0;
+const loaderTimer = setInterval(() => {
+  pct = Math.min(pct + Math.random() * 14, 100);
+  loaderPct.textContent = Math.floor(pct) + '%';
+  if (pct >= 100) {
+    clearInterval(loaderTimer);
+    loaderPct.textContent = '100%';
+    setTimeout(() => {
+      loader.classList.add('hidden');
+      document.querySelector('nav').classList.add('nav-visible');
+    }, 400);
+  }
+}, 80);
+
+/* ── About symbols 3D ── */
+(function() {
+  const syms = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(i => document.getElementById('sym'+i)).filter(Boolean);
+  const phases  = [0, 0.3, 0.6, 0.1, 0.4, 0.7, 0.2, 0.5, 0.8, 0.15, 0.45, 0.75, 0.05, 0.35, 0.65, 0.25, 0.55, 0.85];
+  const speeds  = [1.1, 0.8, 1.3, 0.9, 1.2, 0.7, 1.0, 1.4, 0.85, 1.15, 0.75, 1.25, 0.95, 1.05, 0.8, 1.3, 0.9, 1.1];
+
+  let mx = 0, my = 0, targetMx = 0, targetMy = 0;
+
+  document.addEventListener('mousemove', e => {
+    targetMx = (e.clientX / window.innerWidth  - 0.5) * 2;
+    targetMy = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  function tick(t) {
+    mx += (targetMx - mx) * 0.06;
+    my += (targetMy - my) * 0.06;
+
+    syms.forEach((s, i) => {
+      const ph  = phases[i] * Math.PI * 2;
+      const spd = speeds[i];
+      const idle_rotY = Math.sin(t * 0.001 * spd + ph) * 40;
+      const idle_rotX = Math.cos(t * 0.0007 * spd + ph) * 28;
+      const idle_y    = Math.sin(t * 0.0008 * spd + ph) * 14;
+
+      const rotY = idle_rotY + mx * 50;
+      const rotX = idle_rotX - my * 35;
+      const lx   = 50 + mx * 40;
+      const ly   = 50 + my * 40;
+
+      const glow  = `radial-gradient(circle at ${lx}% ${ly}%, #fff 0%, var(--orange) 45%, transparent 70%)`;
+      const shine = `0 0 ${18 + Math.abs(mx) * 25}px rgba(255,77,0,${0.25 + Math.abs(mx) * 0.35}),
+                     ${mx * 6}px ${my * 6}px ${20 + Math.abs(my) * 15}px rgba(255,77,0,0.15)`;
+
+      s.style.transform = `perspective(600px) rotateY(${rotY}deg) rotateX(${rotX}deg) translateY(${idle_y}px)`;
+      if (s.tagName === 'IMG') {
+        s.style.filter = `drop-shadow(${mx*8}px ${my*6}px ${18+Math.abs(mx)*25}px rgba(255,77,0,${0.3+Math.abs(mx)*0.4}))`;
+      } else {
+        s.style.textShadow = shine;
+        s.style.backgroundImage = glow;
+        s.style.webkitBackgroundClip = 'text';
+        s.style.webkitTextFillColor = 'transparent';
+      }
+    });
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* ── Scroll progress bar ── */
+const progressBar = document.getElementById('scroll-progress');
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  progressBar.style.width = pct + '%';
+}, { passive: true });
+
+/* ── Scroll reveal ── */
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+reveals.forEach(el => observer.observe(el));
+
+/* ── Counter animation ── */
+function animateCounter(el, target) {
+  let current = 0;
+  const step = target / 60;
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = Math.floor(current) + (target >= 10 ? '+' : '');
+    if (current >= target) clearInterval(timer);
+  }, 25);
+}
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      animateCounter(entry.target, parseInt(entry.target.dataset.target));
+      statObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stat-number[data-target]').forEach(el => statObserver.observe(el));
+
+/* ── Parallax hero title ── */
+const heroTitle = document.querySelector('.hero-title');
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  if (heroTitle) heroTitle.style.transform = `translateY(${y * 0.15}px)`;
+});
+
+/* ── Typewriter cycling word ── */
+const cyclingWord = document.getElementById('cycling-word');
+const words = ['experiências', 'resultados', 'projetos'];
+let wordIndex = 0;
+let charIndex = words[0].length;
+let isDeleting = false;
+
+function typeWriter() {
+  const current = words[wordIndex];
+
+  if (isDeleting) {
+    charIndex--;
+    cyclingWord.textContent = current.slice(0, charIndex);
+    if (charIndex === 0) {
+      isDeleting = false;
+      wordIndex = (wordIndex + 1) % words.length;
+      setTimeout(typeWriter, 400);
+      return;
+    }
+    setTimeout(typeWriter, 45);
+  } else {
+    charIndex++;
+    cyclingWord.textContent = words[wordIndex].slice(0, charIndex);
+    if (charIndex === words[wordIndex].length) {
+      setTimeout(() => { isDeleting = true; typeWriter(); }, 2000);
+      return;
+    }
+    setTimeout(typeWriter, 90);
+  }
+}
+
+setTimeout(() => { isDeleting = true; typeWriter(); }, 2000);
+
+/* ── Project Modal ── */
+const projects = [
+  { num:'01', name:'Stalo — Brand Strategy & Visual Identity', tags:['Branding','Estratégia'], img:'assets/images/Stalo/Logotipo.png', url:'https://www.behance.net/gallery/243627065/Stalo-Brand-Strategy-Visual-Identity', page: 'stalo.html' },
+  { num:'02', name:'Hybrid Media — São Paulo', tags:['Branding','Motion'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/48150f236442981.Y3JvcCwyNzYxLDIxNjAsNTQwLDA.jpg', url:'https://www.behance.net/gallery/236442981/Hybrid-Media-Sao-Paulo', page: 'hybrid-media.html' },
+  { num:'03', name:'Welcome Day — CCRP', tags:['Design','Motion'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/807517235882613.Y3JvcCwxNTY3LDEyMjUsMTY2LDA.jpg', url:'https://www.behance.net/gallery/235882613/Welcome-Day-CCRP', page: 'welcome-day.html' },
+  { num:'04', name:'Acampa LKC 2033', tags:['Design','Identidade'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/d8f3d4235767189.Y3JvcCwxMzgwLDEwODAsMzMxLDA.gif', url:'https://www.behance.net/gallery/235767189/Acampa-LKC-2033', page: 'acampa-lkc.html' },
+  { num:'05', name:'CRECEI — Brand Refresh', tags:['Branding','Refresh'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/aa0895222522241.Y3JvcCwxMDA3LDc4OCwxOTcsMA.jpg', url:'https://www.behance.net/gallery/222522241/CRECEI-Brand-Refresh', page: 'crecei.html' },
+  { num:'06', name:'Charlotte — Brand Design', tags:['Branding','Design'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/8e1a54222436833.Y3JvcCwxMDA3LDc4OCwxOTcsMA.png', url:'https://www.behance.net/gallery/222436833/Charlotte-Brand-Design', page: 'charlotte.html' },
+  { num:'07', name:'Wave Agency — Brand Design', tags:['Branding','Design'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/9adaed182240697.6721438fc4566.jpg', url:'https://www.behance.net/gallery/182240697/Wave-Agency-Brand-Design', page: 'wave-agency.html' },
+];
+
+const drawer        = document.getElementById('project-drawer');
+const frameA        = document.getElementById('drawer-frame-a');
+const frameB        = document.getElementById('drawer-frame-b');
+const drawerClose   = document.getElementById('drawer-close');
+const drawerOverlay = document.getElementById('drawer-overlay');
+const drawerPrev    = document.getElementById('drawer-prev');
+const drawerNext    = document.getElementById('drawer-next');
+let currentProject  = 0;
+let activeFrame     = frameA;
+let animating       = false;
+
+function updateArrows() {
+  drawerPrev.disabled = false;
+  drawerNext.disabled = false;
+}
+
+function slideToProject(index, direction) {
+  if (animating || index === currentProject) return;
+  const p = projects[index];
+  if (!p.page) return;
+  animating = true;
+
+  const outClass = direction === 'next' ? 'slide-out-left'  : 'slide-out-right';
+  const inClass  = direction === 'next' ? 'slide-in-right'  : 'slide-in-left';
+  const incoming = activeFrame === frameA ? frameB : frameA;
+
+  incoming.src = p.page;
+  incoming.style.opacity = '1';
+  incoming.style.pointerEvents = 'all';
+
+  activeFrame.classList.add(outClass);
+  incoming.classList.add(inClass);
+
+  currentProject = index;
+  updateArrows();
+
+  setTimeout(() => {
+    activeFrame.classList.remove(outClass);
+    activeFrame.style.opacity = '0';
+    activeFrame.style.pointerEvents = 'none';
+    incoming.classList.remove(inClass);
+    activeFrame = incoming;
+    animating = false;
+  }, 500);
+}
+
+function loadProject(index, direction = 'next') {
+  if (index === currentProject && drawer.classList.contains('open')) return;
+  slideToProject(index, direction);
+}
+
+function openDrawer(index) {
+  const p = projects[index];
+  if (!p.page) return;
+  currentProject = index;
+  frameA.src = p.page;
+  frameA.style.opacity = '1';
+  frameA.style.pointerEvents = 'all';
+  frameB.src = '';
+  frameB.style.opacity = '0';
+  frameB.style.pointerEvents = 'none';
+  activeFrame = frameA;
+  updateArrows();
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      drawer.classList.add('open');
+    });
+  });
+}
+
+function closeDrawer() {
+  drawer.classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { frameA.src = ''; frameB.src = ''; }, 600);
+}
+
+drawerPrev.addEventListener('click', () => { loadProject((currentProject - 1 + projects.length) % projects.length, 'prev'); });
+drawerNext.addEventListener('click', () => { loadProject((currentProject + 1) % projects.length, 'next'); });
+
+document.querySelectorAll('.project-item[data-project]').forEach(el => {
+  el.addEventListener('click', () => openDrawer(+el.dataset.project));
+});
+drawerClose.addEventListener('click', closeDrawer);
+drawerOverlay.addEventListener('click', closeDrawer);
+document.addEventListener('keydown', e => {
+  if (!drawer.classList.contains('open')) return;
+  if (e.key === 'Escape') closeDrawer();
+  if (e.key === 'ArrowLeft') loadProject((currentProject - 1 + projects.length) % projects.length, 'prev');
+  if (e.key === 'ArrowRight') loadProject((currentProject + 1) % projects.length, 'next');
+});
+window.addEventListener('message', e => {
+  if (e.data === 'closeDrawer') { closeDrawer(); return; }
+});
+
+/* ── 3D Tilt effect ── */
+function initTilt(el, strength = 12) {
+  const glare = document.createElement('div');
+  glare.className = 'tilt-glare';
+  el.style.position = 'relative';
+  el.appendChild(glare);
+
+  el.addEventListener('mousemove', e => {
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width  - 0.5;
+    const y = (e.clientY - rect.top)  / rect.height - 0.5;
+    const rotY =  x * strength;
+    const rotX = -y * strength;
+    el.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.03,1.03,1.03)`;
+    el.style.transition = 'transform 0.1s ease, box-shadow 0.3s ease';
+    glare.style.background = `radial-gradient(circle at ${(x+0.5)*100}% ${(y+0.5)*100}%, rgba(255,255,255,0.22) 0%, transparent 65%)`;
+  });
+
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+    el.style.transition = 'transform 0.6s var(--ease), box-shadow 0.4s ease';
+  });
+}
+
+document.querySelectorAll('.project-item, .step, .cta-box').forEach(el => {
+  el.classList.add('tilt');
+  initTilt(el, el.classList.contains('cta-box') ? 6 : el.classList.contains('step') ? 10 : 14);
+});
+
+const btnPrimary = document.querySelector('.btn-primary');
+if (btnPrimary) initTilt(btnPrimary, 16);
+
+/* ── Background Canvas ── */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let mouseX = W * 0.5, mouseY = H * 0.4;
+let lerpX  = mouseX,  lerpY  = mouseY;
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+const orbs = [
+  { x: 0.2, y: 0.3, r: 0.55, color: [255, 77,  0],  speed: 0.00018, phase: 0,    mouse: true  },
+  { x: 0.8, y: 0.7, r: 0.45, color: [80,  20, 180], speed: 0.00013, phase: 2.1,  mouse: false },
+  { x: 0.5, y: 0.1, r: 0.40, color: [0,  120, 200], speed: 0.00020, phase: 4.3,  mouse: false },
+  { x: 0.1, y: 0.8, r: 0.35, color: [180, 40, 255], speed: 0.00015, phase: 1.1,  mouse: false },
+];
+
+function drawBg(t) {
+  lerpX += (mouseX - lerpX) * 0.04;
+  lerpY += (mouseY - lerpY) * 0.04;
+
+  const isLight = document.documentElement.classList.contains('light');
+  ctx.fillStyle = isLight ? '#f5f2ee' : '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  orbs.forEach(o => {
+    const cx = o.mouse
+      ? lerpX + (o.x - 0.5) * W * 0.3
+      : (o.x + Math.sin(t * o.speed + o.phase) * 0.12) * W;
+    const cy = o.mouse
+      ? lerpY + (o.y - 0.5) * H * 0.3
+      : (o.y + Math.cos(t * o.speed * 0.8 + o.phase) * 0.10) * H;
+
+    const radius = o.r * Math.max(W, H);
+    const alpha  = isLight ? 0.07 : 0.13;
+    const [r, g, b] = o.color;
+
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    grad.addColorStop(0,   `rgba(${r},${g},${b},${alpha})`);
+    grad.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.4})`);
+    grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.globalCompositeOperation = 'source-over';
+  requestAnimationFrame(drawBg);
+}
+requestAnimationFrame(drawBg);
+
+/* ── Scroll to top ── */
+function scrollToTop() {
+  const start = window.scrollY;
+  const duration = 1000;
+  const startTime = performance.now();
+  function easeInOutExpo(t) {
+    return t === 0 ? 0 : t === 1 ? 1 : t < 0.5
+      ? Math.pow(2, 20 * t - 10) / 2
+      : (2 - Math.pow(2, -20 * t + 10)) / 2;
+  }
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, start * (1 - easeInOutExpo(progress)));
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+['logo-home', 'logo-footer'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('click', function(e) { e.preventDefault(); scrollToTop(); });
+});
+
+/* ── Lenis smooth scroll + parallax zoom ── */
+(function () {
+  var lenis = new Lenis({
+    duration: 1.15,
+    easing: function(t) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); },
+    smoothWheel: true,
+  });
+
+  var sections = document.querySelectorAll('.parallax-section');
+
+  function updateParallax() {
+    var vh = window.innerHeight;
+    for (var i = 0; i < sections.length; i++) {
+      var rect = sections[i].getBoundingClientRect();
+      var progress = Math.max(0, Math.min(1, (vh - rect.top) / vh));
+      var eased = 1 - Math.pow(1 - progress, 2);
+      var scale = 1.08 - 0.08 * eased;
+      var children = sections[i].children;
+      for (var j = 0; j < children.length; j++) {
+        children[j].style.transform = 'scale3d(' + scale + ',' + scale + ',1)';
+      }
+    }
+  }
+
+  function raf(time) {
+    lenis.raf(time);
+    updateParallax();
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+})();
+
+/* ── Photo blob reveal animation ── */
+(function () {
+  var wrap = document.getElementById('about-photo-anim');
+  if (!wrap) return;
+
+  var gooCanvas = document.getElementById('goo-canvas');
+  var gooCtx   = gooCanvas.getContext('2d');
+  var maskCvs  = document.createElement('canvas');
+  var maskCtx  = maskCvs.getContext('2d');
+
+  var altImg = new Image();
+  altImg.src = 'assets/images/Imagem Nathan 2.png';
+
+  var blobs = [
+    { x: -999, y: -999, ease: 0.18 },
+    { x: -999, y: -999, ease: 0.11 },
+    { x: -999, y: -999, ease: 0.07 },
+    { x: -999, y: -999, ease: 0.045 },
+    { x: -999, y: -999, ease: 0.028 }
+  ];
+  var mouseX = 0, mouseY = 0, hovered = false;
+
+  function gooResize() {
+    var W = wrap.offsetWidth, H = wrap.offsetHeight;
+    gooCanvas.width  = W; gooCanvas.height  = H;
+    maskCvs.width    = W; maskCvs.height    = H;
+  }
+
+  function coverDraw(ctx, img, W, H) {
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    if (!iw || !ih) return;
+    var scale = Math.max(W / iw, H / ih);
+    var sw = iw * scale, sh = ih * scale;
+    ctx.drawImage(img, (W - sw) * 0.65, (H - sh) * 0.15, sw, sh);
+  }
+
+  function gooTick() {
+    for (var i = 0; i < blobs.length; i++) {
+      var tx = hovered ? (i === 0 ? mouseX : blobs[i - 1].x) : -500;
+      var ty = hovered ? (i === 0 ? mouseY : blobs[i - 1].y) : -500;
+      blobs[i].x += (tx - blobs[i].x) * blobs[i].ease;
+      blobs[i].y += (ty - blobs[i].y) * blobs[i].ease;
+    }
+
+    var W = gooCanvas.width, H = gooCanvas.height;
+    if (!W || !H || !altImg.complete) { requestAnimationFrame(gooTick); return; }
+
+    var scale = W / 320;
+    var radii = [110, 86, 64, 45, 28].map(function(r) { return r * scale; });
+    var blur  = Math.round(18 * scale);
+
+    var S = 4;
+    var MW = Math.ceil(W / S), MH = Math.ceil(H / S);
+    if (maskCvs.width !== MW || maskCvs.height !== MH) {
+      maskCvs.width = MW; maskCvs.height = MH;
+    }
+    maskCtx.clearRect(0, 0, MW, MH);
+    maskCtx.filter = 'blur(' + Math.round(blur / S) + 'px)';
+    maskCtx.fillStyle = 'white';
+    for (var i = 0; i < blobs.length; i++) {
+      maskCtx.beginPath();
+      maskCtx.arc(blobs[i].x / S, blobs[i].y / S, radii[i] / S, 0, Math.PI * 2);
+      maskCtx.fill();
+    }
+    maskCtx.filter = 'none';
+
+    var id = maskCtx.getImageData(0, 0, MW, MH);
+    var d = id.data;
+    for (var j = 0; j < d.length; j += 4) {
+      var v = d[j + 3] > 60 ? 255 : 0;
+      d[j] = d[j+1] = d[j+2] = d[j+3] = v;
+    }
+    maskCtx.putImageData(id, 0, 0);
+
+    gooCtx.clearRect(0, 0, W, H);
+    coverDraw(gooCtx, altImg, W, H);
+    gooCtx.globalCompositeOperation = 'destination-in';
+    gooCtx.drawImage(maskCvs, 0, 0, W, H);
+    gooCtx.globalCompositeOperation = 'source-over';
+
+    requestAnimationFrame(gooTick);
+  }
+
+  wrap.addEventListener('mousemove', function (e) {
+    var rect = wrap.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  wrap.addEventListener('mouseenter', function () { hovered = true; });
+  wrap.addEventListener('mouseleave', function () { hovered = false; });
+  window.addEventListener('resize', gooResize);
+
+  gooResize();
+  requestAnimationFrame(gooTick);
+})();
