@@ -142,7 +142,7 @@ setTimeout(() => { isDeleting = true; typeWriter(); }, 2000);
 
 /* ── Project Modal ── */
 const projects = [
-  { num:'01', name:'Stalo — Brand Strategy & Visual Identity', tags:['Branding','Estratégia'], img:'assets/images/Stalo/Logotipo.png', url:'https://www.behance.net/gallery/243627065/Stalo-Brand-Strategy-Visual-Identity', page: 'stalo.html' },
+  { num:'01', name:'Stalo — Brand Strategy & Visual Identity', tags:['Branding','Estratégia'], img:'assets/images/projects/stalo/Logotipo.png', url:'https://www.behance.net/gallery/243627065/Stalo-Brand-Strategy-Visual-Identity', page: 'stalo.html' },
   { num:'02', name:'Hybrid Media — São Paulo', tags:['Branding','Motion'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/48150f236442981.Y3JvcCwyNzYxLDIxNjAsNTQwLDA.jpg', url:'https://www.behance.net/gallery/236442981/Hybrid-Media-Sao-Paulo', page: 'hybrid-media.html' },
   { num:'03', name:'Welcome Day — CCRP', tags:['Design','Motion'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/807517235882613.Y3JvcCwxNTY3LDEyMjUsMTY2LDA.jpg', url:'https://www.behance.net/gallery/235882613/Welcome-Day-CCRP', page: 'welcome-day.html' },
   { num:'04', name:'Acampa LKC 2033', tags:['Design','Identidade'], img:'https://mir-s3-cdn-cf.behance.net/projects/808/d8f3d4235767189.Y3JvcCwxMzgwLDEwODAsMzMxLDA.gif', url:'https://www.behance.net/gallery/235767189/Acampa-LKC-2033', page: 'acampa-lkc.html' },
@@ -404,7 +404,7 @@ function scrollToTop() {
   var maskCtx  = maskCvs.getContext('2d');
 
   var altImg = new Image();
-  altImg.src = 'assets/images/Imagem Nathan 2.png';
+  altImg.src = 'assets/images/about/nathan-alt.png';
 
   var blobs = [
     { x: -999, y: -999, ease: 0.18 },
