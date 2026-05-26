@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -92,7 +93,9 @@
       text-transform: uppercase;
       text-decoration: none;
       color: #ffffff;
-      background: var(--orange);
+      background-image: linear-gradient(270deg, #ff4d00, #ff8c00, #ff2200, #ff6a00);
+      background-size: 400% 400%;
+      animation: gradientShift 5s ease infinite;
       padding: 14px 32px;
       border-radius: 999px;
       transition: transform 0.3s var(--ease), box-shadow 0.3s;
@@ -236,7 +239,9 @@
     .video-player-wrapper:hover .video-controls { opacity: 1; }
     .video-btn { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; display: flex; align-items: center; flex-shrink: 0; }
     .video-progress { flex: 1; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; cursor: pointer; }
-    .video-progress-fill { height: 100%; background: var(--orange); border-radius: 2px; width: 0%; pointer-events: none; }
+    .video-progress-fill { height: 100%; background-image: linear-gradient(270deg, #ff4d00, #ff8c00, #ff2200, #ff6a00);
+      background-size: 400% 400%;
+      animation: gradientShift 5s ease infinite; border-radius: 2px; width: 0%; pointer-events: none; }
     .video-time { color: #fff; font-size: 12px; font-family: monospace; flex-shrink: 0; }
     .video-volume-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .video-volume {
@@ -261,7 +266,9 @@
     @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
     ::-webkit-scrollbar { width: 2px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--orange); }
+    ::-webkit-scrollbar-thumb { background-image: linear-gradient(270deg, #ff4d00, #ff8c00, #ff2200, #ff6a00);
+      background-size: 400% 400%;
+      animation: gradientShift 5s ease infinite; }
 
     @media (max-width: 768px) {
       nav { padding: 14px 20px; gap: 24px; }
@@ -269,7 +276,7 @@
       .project-meta-row { flex-wrap: wrap; gap: 32px; }
       .project-text-section { padding: 60px 24px; }
     }
-  </style>
+    </style>
 </head>
 <body>
 

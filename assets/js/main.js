@@ -486,3 +486,139 @@ requestAnimationFrame(drawBg);
   gooResize();
   requestAnimationFrame(gooTick);
 })();
+
+/* ── Hero scroll indicator visibility ── */
+(function () {
+  const scrollWrap = document.querySelector('.hero-scroll-wrap');
+  const hero = document.getElementById('hero');
+  if (!scrollWrap || !hero) return;
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      scrollWrap.style.opacity = entry.isIntersecting ? '1' : '0';
+      scrollWrap.style.pointerEvents = entry.isIntersecting ? 'auto' : 'none';
+    });
+  }, { threshold: 0.3 });
+
+  obs.observe(hero);
+})();
+
+/* ── Process Carousel ── */
+(function () {
+  const track = document.querySelector('.process-track');
+  const steps = document.querySelectorAll('.process-track .step');
+  const dots = document.querySelectorAll('.process-dot');
+  const prev = document.querySelector('.process-prev');
+  const next = document.querySelector('.process-next');
+  if (!track || !steps.length) return;
+
+  let current = 0;
+
+  function goTo(idx) {
+    steps[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = (idx + steps.length) % steps.length;
+    steps[current].classList.add('active');
+    dots[current].classList.add('active');
+    track.style.transform = `translateX(-${current * 100}%)`;
+  }
+
+  prev.addEventListener('click', () => goTo(current - 1));
+  next.addEventListener('click', () => goTo(current + 1));
+  dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+})();
+
+/* ── CTA hover — site fica laranja ── */
+(function () {
+  const overlay = document.createElement('div');
+  overlay.id = 'cta-overlay';
+  document.body.appendChild(overlay);
+
+  const cta    = document.querySelector('#cta .btn-primary');
+  const ctaBox = document.querySelector('.cta-box');
+  if (!cta || !ctaBox) return;
+
+  // SVG trim-path stroke — fora da box para não ser cortado pelo overflow:hidden
+  const ctaSection = document.querySelector('#cta');
+  const ns  = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.id    = 'cta-stroke-svg';
+  const r   = document.createElementNS(ns, 'rect');
+  r.setAttribute('rx', '20');
+  svg.appendChild(r);
+  ctaSection.appendChild(svg);
+
+  function updateStroke() {
+    const boxRect     = ctaBox.getBoundingClientRect();
+    const parentRect  = ctaSection.getBoundingClientRect();
+    const top    = boxRect.top  - parentRect.top;
+    const left   = boxRect.left - parentRect.left;
+    const width  = boxRect.width;
+    const height = boxRect.height;
+    const rx = 20;
+    const perimeter = 2 * (width - 2 * rx) + 2 * (height - 2 * rx) + 2 * Math.PI * rx;
+
+    svg.style.position = 'absolute';
+    svg.style.top      = top  + 'px';
+    svg.style.left     = left + 'px';
+    svg.style.width    = width  + 'px';
+    svg.style.height   = height + 'px';
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    r.setAttribute('width',  width  - 3);
+    r.setAttribute('height', height - 3);
+    r.setAttribute('x', '1.5');
+    r.setAttribute('y', '1.5');
+    r.style.strokeDasharray  = perimeter;
+    r.style.strokeDashoffset = perimeter;
+    svg.dataset.perimeter = perimeter;
+  }
+
+  // Logo branca sobre a box
+  const logoSrc = document.querySelector('.nav-logo-img');
+  const logoOverlay = document.createElement('div');
+  logoOverlay.id = 'cta-logo-overlay';
+  if (logoSrc) {
+    const logoClone = logoSrc.cloneNode(true);
+    logoClone.removeAttribute('class');
+    logoOverlay.appendChild(logoClone);
+  }
+  ctaSection.appendChild(logoOverlay);
+
+  function updateLogoPos() {
+    const boxRect    = ctaBox.getBoundingClientRect();
+    const parentRect = ctaSection.getBoundingClientRect();
+    const top  = boxRect.top  - parentRect.top;
+    const left = boxRect.left - parentRect.left + boxRect.width / 2;
+    logoOverlay.style.top       = top + 'px';
+    logoOverlay.style.left      = left + 'px';
+    logoOverlay.style.transform = 'translate(-50%, -160%)';
+  }
+
+  updateStroke();
+  updateLogoPos();
+  window.addEventListener('resize', () => { updateStroke(); updateLogoPos(); });
+
+  cta.addEventListener('mouseenter', () => {
+    updateStroke();
+    updateLogoPos();
+    overlay.classList.add('active');
+    ctaBox.classList.add('btn-hovered');
+    logoOverlay.classList.add('visible');
+    const p = svg.dataset.perimeter;
+    r.style.transition = 'none';
+    r.style.strokeDashoffset = p;
+    requestAnimationFrame(() => {
+      r.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)';
+      r.style.strokeDashoffset = 0;
+    });
+  });
+
+  cta.addEventListener('mouseleave', () => {
+    overlay.classList.remove('active');
+    ctaBox.classList.remove('btn-hovered');
+    logoOverlay.classList.remove('visible');
+    const p = svg.dataset.perimeter;
+    r.style.transition = 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)';
+    r.style.strokeDashoffset = p;
+  });
+})();
