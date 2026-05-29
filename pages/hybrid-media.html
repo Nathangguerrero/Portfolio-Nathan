@@ -337,20 +337,86 @@
     }
     .video-progress {
       flex: 1;
-      height: 4px;
-      background: rgba(255,255,255,0.3);
-      border-radius: 2px;
       cursor: pointer;
       position: relative;
+      padding: 8px 0;
+      margin: -8px 0;
+      box-sizing: content-box;
+    }
+    .video-progress-track {
+      position: relative;
+      height: 4px;
+      border-radius: 2px;
+      overflow: visible;
+      transition: height 0.15s ease;
+    }
+    .video-progress:hover .video-progress-track { height: 6px; }
+    .video-progress-bg {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
     }
     .video-progress-fill {
-      height: 100%;
+      position: absolute;
+      inset: 0;
+      right: auto;
+      width: 0%;
       background-image: linear-gradient(270deg, #ff4d00, #ff8c00, #ff2200, #ff6a00);
       background-size: 400% 400%;
       animation: gradientShift 5s ease infinite;
       border-radius: 2px;
-      width: 0%;
       pointer-events: none;
+    }
+    .video-progress-thumb {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+      pointer-events: none;
+      transition: transform 0.15s ease;
+      left: 0%;
+    }
+    .video-progress:hover .video-progress-thumb { transform: translate(-50%, -50%) scale(1); }
+    .video-preview-tooltip {
+      position: absolute;
+      bottom: calc(100% + 14px);
+      transform: translateX(-50%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .video-progress:hover .video-preview-tooltip { opacity: 1; }
+    .video-preview-frame {
+      width: 160px;
+      height: 90px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #000;
+      position: relative;
+    }
+    .video-preview-frame video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .video-preview-time {
+      color: #fff;
+      font-size: 11px;
+      font-family: monospace;
+      background: rgba(0,0,0,0.7);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
     .video-time {
       color: #fff;
@@ -511,7 +577,19 @@
           <svg id="pauseIcon" width="20" height="20" viewBox="0 0 24 24" fill="white" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
         </button>
         <div class="video-progress" id="progressBar">
-          <div class="video-progress-fill" id="progressFill"></div>
+          <div class="video-preview-tooltip" id="previewTooltip">
+            <div class="video-preview-frame">
+              <video id="previewVideo" muted playsinline preload="metadata">
+                <source id="previewSource" src="../assets/images/projects/hybrid-media/5-video-480.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <span class="video-preview-time" id="previewTime">0:00</span>
+          </div>
+          <div class="video-progress-track" id="progressTrack">
+            <div class="video-progress-bg"></div>
+            <div class="video-progress-fill" id="progressFill"></div>
+            <div class="video-progress-thumb" id="progressThumb"></div>
+          </div>
         </div>
         <span class="video-time" id="videoTime">0:00 / 0:00</span>
         <div class="video-volume-wrap">
@@ -646,7 +724,18 @@
   </script>
 
   <script>
+  (function () {
     const video = document.getElementById('projectVideo');
+
+    // iOS — usa player nativo da Apple
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      video.setAttribute('controls', '');
+      video.removeAttribute('playsinline');
+      document.getElementById('playOverlay').style.display = 'none';
+      document.querySelector('.video-controls').style.display = 'none';
+      return;
+    }
     const videoSource = document.getElementById('videoSource');
     const playBtn = document.getElementById('playBtn');
     const playIcon = document.getElementById('playIcon');
@@ -703,15 +792,63 @@
       playOverlay.classList.remove('hidden');
     });
 
+    const progressThumb   = document.getElementById('progressThumb');
+    const previewTooltip  = document.getElementById('previewTooltip');
+    const previewVideo    = document.getElementById('previewVideo');
+    const previewSource   = document.getElementById('previewSource');
+    const previewTime     = document.getElementById('previewTime');
+
     video.addEventListener('timeupdate', () => {
       if (!video.duration) return;
-      progressFill.style.width = (video.currentTime / video.duration * 100) + '%';
+      const pct = video.currentTime / video.duration * 100;
+      progressFill.style.width = pct + '%';
+      progressThumb.style.left = pct + '%';
       videoTime.textContent = fmt(video.currentTime) + ' / ' + fmt(video.duration);
     });
 
-    progressBar.addEventListener('click', e => {
+    function getSeekRatio(e) {
       const rect = progressBar.getBoundingClientRect();
-      video.currentTime = (e.clientX - rect.left) / rect.width * video.duration;
+      return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    }
+
+    function applySeek(ratio) {
+      if (!video.duration) return;
+      video.currentTime = ratio * video.duration;
+    }
+
+    // Drag seek
+    let dragging = false;
+    progressBar.addEventListener('mousedown', e => {
+      dragging = true;
+      applySeek(getSeekRatio(e));
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      applySeek(getSeekRatio(e));
+    });
+    document.addEventListener('mouseup', () => { dragging = false; });
+
+    // Hover preview
+    let previewReady = false;
+    previewVideo.addEventListener('loadedmetadata', () => { previewReady = true; });
+
+    progressBar.addEventListener('mousemove', e => {
+      const ratio = getSeekRatio(e);
+      const rect  = progressBar.getBoundingClientRect();
+      const x     = e.clientX - rect.left;
+
+      // posiciona tooltip centrado no cursor, com limites laterais
+      const tooltipW = 160;
+      const half = tooltipW / 2;
+      const clampedX = Math.max(half, Math.min(rect.width - half, x));
+      previewTooltip.style.left = clampedX + 'px';
+
+      if (previewReady && video.duration) {
+        const t = ratio * video.duration;
+        previewVideo.currentTime = t;
+        previewTime.textContent  = fmt(t);
+      }
     });
 
     muteBtn.addEventListener('click', () => {
@@ -739,7 +876,12 @@
       video.load();
       video.currentTime = t;
       if (!paused) video.play();
+      // preview sempre usa 480p independente da qualidade escolhida
+      previewSource.src = qualitySources['480'];
+      previewVideo.load();
+      previewReady = false;
     });
+  })();
   </script>
 
   <!-- CLOSING CTA -->

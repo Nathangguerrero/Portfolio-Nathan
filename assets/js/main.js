@@ -211,6 +211,12 @@ function slideToProject(index, direction) {
   if (!p.page) return;
   animating = true;
 
+  // pausa qualquer vídeo rodando no frame que vai sair
+  try {
+    const outDoc = activeFrame.contentDocument || activeFrame.contentWindow?.document;
+    outDoc?.querySelectorAll('video').forEach(v => v.pause());
+  } catch(e) {}
+
   const outClass = direction === 'next' ? 'slide-out-left'  : 'slide-out-right';
   const inClass  = direction === 'next' ? 'slide-in-right'  : 'slide-in-left';
   const incoming = activeFrame === frameA ? frameB : frameA;
@@ -281,6 +287,12 @@ function openDrawer(index) {
 }
 
 function closeDrawer() {
+  try {
+    [frameA, frameB].forEach(f => {
+      const doc = f.contentDocument || f.contentWindow?.document;
+      doc?.querySelectorAll('video').forEach(v => v.pause());
+    });
+  } catch(e) {}
   drawer.classList.remove('open');
   unlockScroll();
   setTimeout(() => { frameA.src = ''; frameB.src = ''; }, 600);
@@ -293,10 +305,15 @@ document.querySelectorAll('.project-item[data-project]').forEach(el => {
   el.addEventListener('click', () => openDrawer(+el.dataset.project));
 });
 drawerClose.addEventListener('click', closeDrawer);
-drawerOverlay.addEventListener('click', closeDrawer);
+drawerOverlay.addEventListener('click', () => {
+  if (document.getElementById('contact-panel')?.classList.contains('open')) return;
+  closeDrawer();
+});
 document.addEventListener('keydown', e => {
   if (!drawer.classList.contains('open')) return;
-  if (e.key === 'Escape') closeDrawer();
+  const contactOpen = document.getElementById('contact-panel')?.classList.contains('open');
+  if (e.key === 'Escape' && !contactOpen) closeDrawer();
+  if (contactOpen) return;
   if (e.key === 'ArrowLeft') loadProject((currentProject - 1 + projects.length) % projects.length, 'prev');
   if (e.key === 'ArrowRight') loadProject((currentProject + 1) % projects.length, 'next');
 });
@@ -587,6 +604,8 @@ requestAnimationFrame(drawBg);
 })();
 
 /* ── CTA hover — site fica laranja ── */
+let ctaHoverFreeze = null;
+let ctaHoverUnfreeze = null;
 (function () {
   const overlay = document.createElement('div');
   overlay.id = 'cta-overlay';
@@ -656,7 +675,9 @@ requestAnimationFrame(drawBg);
   updateLogoPos();
   window.addEventListener('resize', () => { updateStroke(); updateLogoPos(); });
 
-  cta.addEventListener('mouseenter', () => {
+  let frozen = false;
+
+  function activateHover() {
     updateStroke();
     updateLogoPos();
     overlay.classList.add('active');
@@ -669,16 +690,22 @@ requestAnimationFrame(drawBg);
       r.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)';
       r.style.strokeDashoffset = 0;
     });
-  });
+  }
 
-  cta.addEventListener('mouseleave', () => {
+  function deactivateHover() {
     overlay.classList.remove('active');
     ctaBox.classList.remove('btn-hovered');
     logoOverlay.classList.remove('visible');
     const p = svg.dataset.perimeter;
     r.style.transition = 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)';
     r.style.strokeDashoffset = p;
-  });
+  }
+
+  cta.addEventListener('mouseenter', () => { if (!frozen) activateHover(); });
+  cta.addEventListener('mouseleave', () => { if (!frozen) deactivateHover(); });
+
+  ctaHoverFreeze   = () => { frozen = true;  if (!ctaBox.classList.contains('btn-hovered')) activateHover(); };
+  ctaHoverUnfreeze = () => { frozen = false; deactivateHover(); };
 })();
 
 /* ── Contact Panel ── */
@@ -691,7 +718,8 @@ requestAnimationFrame(drawBg);
 
   const whatsappBtn = document.getElementById('whatsapp-btn');
 
-  function openContact() {
+  function openContact(fromCtaBtn = false) {
+    if (fromCtaBtn && ctaHoverFreeze) ctaHoverFreeze();
     lockScroll();
     panel.classList.add('open');
     if (whatsappBtn) whatsappBtn.style.display = 'none';
@@ -702,10 +730,12 @@ requestAnimationFrame(drawBg);
     panel.classList.remove('open');
     unlockScroll();
     if (whatsappBtn) whatsappBtn.style.display = '';
+    if (ctaHoverUnfreeze) ctaHoverUnfreeze();
   }
 
   document.querySelectorAll('.open-contact').forEach(btn => {
-    btn.addEventListener('click', openContact);
+    const isCtaBtn = btn.closest('#cta') !== null;
+    btn.addEventListener('click', () => openContact(isCtaBtn));
   });
 
   closeBtn.addEventListener('click', closeContact);
