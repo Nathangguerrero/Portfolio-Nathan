@@ -379,12 +379,21 @@
       nav { padding: 14px 20px; gap: 24px; }
       .project-hero { padding: 0 24px 60px; }
       .project-meta-row { flex-wrap: wrap; gap: 32px; }
-      .project-content { padding: 80px 24px; }
-      .project-image-grid { grid-template-columns: 1fr; }
-      .credits-grid { grid-template-columns: 1fr; padding: 32px; }
+      .project-content { padding: 80px 0; }
+      .project-section { padding: 0 24px; }
+      .project-image-full, .project-image-grid { margin-left: 0; margin-right: 0; }
+      .project-image-grid { grid-template-columns: 1fr; gap: 4px; }
+      .credits-grid { grid-template-columns: 1fr; padding: 24px; }
       .project-cta { padding: 60px 24px; }
     }
-    </style>
+  
+    @media (max-width: 768px) {
+      .project-title { font-size: clamp(2rem, 8vw, 2.8rem) !important; }
+      .project-section-title { font-size: clamp(1.4rem, 5vw, 1.8rem) !important; }
+      .project-hero { padding: 0 20px 48px; }
+      .project-meta-row { gap: 20px; flex-wrap: wrap; }
+    }
+  </style>
 </head>
 <body>
 

@@ -284,7 +284,20 @@
       .project-meta-row { flex-wrap: wrap; gap: 32px; }
       .project-text-section { padding: 60px 24px; }
     }
-    </style>
+  
+    @media (max-width: 768px) {
+      .project-title { font-size: clamp(2rem, 8vw, 2.8rem) !important; }
+      .project-section-title { font-size: clamp(1.4rem, 5vw, 1.8rem) !important; }
+      .project-hero { padding: 0 20px 48px; }
+      .project-meta-row { gap: 20px; flex-wrap: wrap; }
+    }
+
+    @media (max-width: 768px) {
+      .project-video-full { padding: 0 !important; }
+      .video-player-wrapper { width: 100% !important; max-height: none !important; border-radius: 0 !important; }
+      .video-player-wrapper video { width: 100% !important; height: auto !important; max-width: 100% !important; }
+    }
+  </style>
 </head>
 <body>
 
@@ -327,10 +340,6 @@
 
   <div class="project-image-full reveal">
     <img src="../assets/images/projects/welcome-day/img-01.webp" alt="Welcome Day" loading="lazy" />
-  </div>
-
-  <div class="project-image-full reveal">
-    <img src="../assets/images/projects/welcome-day/img-02.webp" alt="Welcome Day" loading="lazy" />
   </div>
 
   <div class="project-text-section reveal">

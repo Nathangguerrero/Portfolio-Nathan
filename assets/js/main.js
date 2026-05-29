@@ -8,15 +8,23 @@
     btn.classList.add('open');
     menu.classList.add('open');
     btn.setAttribute('aria-expanded', 'true');
-    document.documentElement.style.overflow = 'hidden';
+    lockScroll();
   }
 
   function closeMenu() {
     btn.classList.remove('open');
     menu.classList.remove('open');
     btn.setAttribute('aria-expanded', 'false');
-    document.documentElement.style.overflow = '';
+    unlockScroll();
   }
+
+  const closeBtn = document.getElementById('mobile-menu-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+
+  // Fechar ao clicar no overlay (fora do painel)
+  menu.addEventListener('click', e => {
+    if (e.target === menu) closeMenu();
+  });
 
   btn.addEventListener('click', () => {
     btn.classList.contains('open') ? closeMenu() : openMenu();
@@ -249,22 +257,10 @@ function loadProject(index, direction = 'next') {
 }
 
 function lockScroll() {
-  const scrollY = window.scrollY;
-  document.body.style.overflow = 'hidden';
-  document.body.style.position = 'fixed';
-  document.body.style.top = `-${scrollY}px`;
-  document.body.style.width = '100%';
-  document.body.dataset.scrollY = scrollY;
   if (window.__lenis) window.__lenis.stop();
 }
 
 function unlockScroll() {
-  const scrollY = parseInt(document.body.dataset.scrollY || '0', 10);
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
-  window.scrollTo(0, scrollY);
   if (window.__lenis) window.__lenis.start();
 }
 
@@ -280,6 +276,7 @@ function openDrawer(index) {
   frameB.style.pointerEvents = 'none';
   activeFrame = frameA;
   updateArrows();
+  updateMobileCounter();
   lockScroll();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -302,6 +299,35 @@ function closeDrawer() {
 
 drawerPrev.addEventListener('click', () => { loadProject((currentProject - 1 + projects.length) % projects.length, 'prev'); });
 drawerNext.addEventListener('click', () => { loadProject((currentProject + 1) % projects.length, 'next'); });
+
+// Mobile nav buttons
+const mobileCounter = document.getElementById('drawer-mobile-counter');
+const mobilePrev    = document.getElementById('drawer-mobile-prev');
+const mobileNext    = document.getElementById('drawer-mobile-next');
+function updateMobileCounter() {
+  if (mobileCounter) mobileCounter.textContent = (currentProject + 1) + '/' + projects.length;
+}
+if (mobilePrev) mobilePrev.addEventListener('click', () => { loadProject((currentProject - 1 + projects.length) % projects.length, 'prev'); updateMobileCounter(); });
+if (mobileNext) mobileNext.addEventListener('click', () => { loadProject((currentProject + 1) % projects.length, 'next'); updateMobileCounter(); });
+
+// Swipe touch no drawer panel
+(function() {
+  const panel = document.getElementById('drawer-panel');
+  if (!panel) return;
+  let startX = 0, startY = 0;
+  panel.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  panel.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) < 60 || dy > 80) return; // swipe horizontal mínimo 60px
+    if (dx < 0) { loadProject((currentProject + 1) % projects.length, 'next'); }
+    else        { loadProject((currentProject - 1 + projects.length) % projects.length, 'prev'); }
+    updateMobileCounter();
+  }, { passive: true });
+})();
 
 document.querySelectorAll('.project-item[data-project]').forEach(el => {
   el.addEventListener('click', () => openDrawer(+el.dataset.project));

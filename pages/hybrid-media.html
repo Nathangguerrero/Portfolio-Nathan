@@ -486,7 +486,20 @@
       .gifs-grid-section { grid-template-columns: repeat(2, 1fr); padding: 24px; }
       .gifs-grid-wide { grid-template-columns: 1fr; padding: 0 24px 24px; }
     }
-    </style>
+  
+    @media (max-width: 768px) {
+      .project-title { font-size: clamp(2rem, 8vw, 2.8rem) !important; }
+      .project-section-title { font-size: clamp(1.4rem, 5vw, 1.8rem) !important; }
+      .project-hero { padding: 0 20px 48px; }
+      .project-meta-row { gap: 20px; flex-wrap: wrap; }
+    }
+
+    @media (max-width: 768px) {
+      .project-video-full { padding: 0 !important; }
+      .video-player-wrapper { width: 100% !important; max-height: none !important; border-radius: 0 !important; }
+      .video-player-wrapper video { width: 100% !important; height: auto !important; max-width: 100% !important; }
+    }
+  </style>
 </head>
 <body>
 
